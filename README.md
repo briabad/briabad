@@ -1,4 +1,4 @@
-### Hi there 👋, my name is Briant
+###  Briant
 #### Data scientist
 <!-- ![Data scientist](https://arturssmirnovs.github.io/github-profile-readme-generator/images/banner.png)
 -->
