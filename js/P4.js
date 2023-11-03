@@ -99,11 +99,11 @@ function loadScene() {
     const path="./js/"
     
     const texSuelo =new THREE.TextureLoader().load('./js/piso.jpg')
-    texSuelo.repeat.set(4,3)
+    texSuelo.repeat.set(2,2)
     texSuelo.wrapS=texSuelo.wrapT = THREE.RepeatWrapping
 
     const texBrazo =new THREE.TextureLoader().load('./js/bronce.jpg')
-    const texAntebrazo =new THREE.TextureLoader().load('./js/metal_128.jpg')
+    const texAntebrazo =new THREE.TextureLoader().load('./js/metal.jpg')
     const texPinza =new THREE.TextureLoader().load('./js/oro.jpg')
 
     const matsuelo = new THREE.MeshStandardMaterial({color:"rgb(150,150,150)",map:texSuelo})
