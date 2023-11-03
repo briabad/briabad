@@ -19,50 +19,61 @@ function init() {
     // Instanciar el motor de render
     renderer = new THREE.WebGLRenderer()
     renderer.setSize( window.innerWidth, window.innerHeight )
-    renderer.setClearColor(0xFFFFFF)
+    // renderer.setClearColor(0xFFFFFF)
     renderer.autoClear = false
     document.getElementById( 'container' ).appendChild( renderer.domElement )
+
+    // Instanciar el nodo raíz de la escena
+    scene = new THREE.Scene()
+    // scene.background = new THREE.Color( 0.5, 0.5, 0.5 )
 
     //inicializar sombras
     renderer.antialias =true
     renderer.shadowMap.enabled=true
 
-    // Instanciar el nodo raíz de la escena
-    scene = new THREE.Scene()
-    // scene.background = new THREE.Color( 1., 1.5, 1.5 )
-
-    //Luces
-    // const ambiental = new THREE.AmbientLight(0x222222)
-    // scene.add(ambiental)
-    const direccional = new THREE.DirectionalLight(0xFFFFFF,0.3)
-    direccional.position.set(-100,370,-1)
-    direccional.castShadow = true
-    scene.add(direccional)
-    // const puntual = new THREE.PointLight(0xFFFFFF,10.5)
-    // puntual.position.set(2,670,4)
-    // scene.add(puntual)
-    const focal = new THREE.SpotLight(0xFFFFFF,0.3)
-    focal.position.set(-200,270,100)
-    focal.target.position.set(0,0,0)
-    focal.angle=Math.PI / 7
-    focal.penumbra=0.3
-    focal.castShadow=true
-    focal.shadow.camera.far=20
-    focal.shadow.camera.fov=80
-    scene.add(focal)
-    // scene.add(new THREE.CameraHelper(focal.shadow.camera))
-    // scene.add(new THREE.CameraHelper(puntual.shadow.camera))
-    // scene.add(new THREE.CameraHelper(direccional.shadow.camera))
-
-
     // Instanciar la cámara
     camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 )
-    camera.position.set( 0.5, 300, 200 )
+    camera.position.set( 0.5, 400, 200 )
     camera.lookAt( 0, 1, 0 ) 
+    camera.far = 7000
 
-    // const aspectRatio = window.innerWidth/window.innerHeight;
-    // setOrtoCameras(aspectRatio);
+
+  // Lighting
+    // ambient
+    const ambiente = new THREE.AmbientLight( 0x404040, 0.5 );
+    scene.add( ambiente );
+    // directional
+    const direccional = new THREE.DirectionalLight( 0xffffff, 0.5 );
+    direccional.position.set(0, 600, -500);
+    direccional.target.position.set(0, 0, 0);
+    direccional.shadow.camera.far = 2000; 
+    direccional.shadow.camera.left = -500;
+    direccional.shadow.camera.right = 500;
+    direccional.shadow.camera.top = 500;
+    direccional.shadow.camera.bottom = -500;
+    direccional.castShadow = true;
+    scene.add(direccional.target);
+    scene.add(direccional);
     
+    // spot 1
+    const puntual = new THREE.SpotLight('white', 0.3);
+    puntual.position.set(500, 600, 0);
+    puntual.target.position.set(0, 0, 0);
+    puntual.shadow.camera.far = 2000; 
+    puntual.castShadow = true;
+    scene.add(puntual.target);
+    scene.add(puntual);
+
+    // spot 2
+    const puntual2 = new THREE.SpotLight('white', 0.3);
+    puntual2.position.set(-500, 600, 0);
+    puntual2.target.position.set(0, 0, 0);
+    puntual2.shadow.camera.far = 2000; 
+    puntual2.castShadow = true;
+    scene.add(puntual2.target);
+    scene.add(puntual2);
+
+     
     const controls = new OrbitControls(camera, renderer.domElement);
 
     // Camaras 
@@ -80,21 +91,50 @@ function loadScene() {
 
 
     // Material sencillo
-    const material = new THREE.MeshStandardMaterial({color:'yellow'});
-    const material_suelo = new THREE.MeshStandardMaterial({color:'yellow'});
+    const material = new THREE.MeshNormalMaterial({
+        transparent: true
+        , opacity:1
+         })
+    // const material_suelo = new THREE.MeshStandardMaterial({ color:'red' })
+    const path="./js/"
+    
+    const texSuelo =new THREE.TextureLoader().load('./js/piso.jpg')
+    texSuelo.repeat.set(4,3)
+    texSuelo.wrapS=texSuelo.wrapT = THREE.RepeatWrapping
+
+    const texBrazo =new THREE.TextureLoader().load('./js/bronce.jpg')
+    const texAntebrazo =new THREE.TextureLoader().load('./js/metal_128.jpg')
+    const texPinza =new THREE.TextureLoader().load('./js/oro.jpg')
+
+    const matsuelo = new THREE.MeshStandardMaterial({color:"rgb(150,150,150)",map:texSuelo})
+    const matBrazo = new THREE.MeshLambertMaterial({color:"rgb(150,150,150)",map:texBrazo})
+    const matAntebrazo = new THREE.MeshPhongMaterial({color:"rgb(150,150,150)",map:texAntebrazo})
+    const matPinza = new THREE.MeshPhongMaterial({color:"rgb(150,150,150)",map:texPinza})
+
+
+    const entorno = [
+        path+"posx.jpg",path+"negx.jpg",
+        path+"posy.jpg",path+"negy.jpg",
+        path+"posz.jpg",path+"negz.jpg",
+    ]
+ 
+    const texRotula= new THREE.CubeTextureLoader().load(entorno)
+    const mateRotula = new THREE.MeshPhongMaterial({color:"white",specular:"gray",shininess:30,envMap:texRotula})
+
+
 
 
 
     //Suelo
-    suelo = new THREE.Mesh( new THREE.PlaneGeometry( 1000,1000), material_suelo )
+    suelo = new THREE.Mesh( new THREE.PlaneGeometry( 1000,1000), matsuelo )
     suelo.rotation.x = -Math.PI/2
-    suelo.receiveShadow=true
     // suelo.rotation.y = -0.2
+    suelo.receiveShadow=true
     scene.add( suelo )
     
 
     // Base cilindro
-    base_cilindro = new THREE.Mesh( new THREE.CylinderGeometry( 50,50,15,24), material)
+    base_cilindro = new THREE.Mesh( new THREE.CylinderGeometry( 50,50,15,24), matBrazo)
     base_cilindro.castShadow=base_cilindro.receiveShadow=true
 
     // base_cilindro.rotation.x = -0.1
@@ -104,26 +144,29 @@ function loadScene() {
     brazo = new THREE.Group();
 
     // Base cilindro
-    const eje = new THREE.Mesh(new THREE.CylinderGeometry( 20,20,18,24), material)
-    eje.castShadow=eje.receiveShadow=true
-
+    const eje = new THREE.Mesh(new THREE.CylinderGeometry( 20,20,18,24), matBrazo)
     eje.position.x = 1
     eje.rotation.x = Math.PI/2
+    eje.castShadow=eje.receiveShadow=true
+    brazo.castShadow=brazo.receiveShadow=true
+
     brazo.add(eje)
 
 
     // Base esparrago
-    const esparrago = new THREE.Mesh(new THREE.BoxGeometry(18,120,12), material)
-    esparrago.castShadow=esparrago.receiveShadow=true
-
-    
+    const esparrago = new THREE.Mesh(new THREE.BoxGeometry(18,120,12), matBrazo)
     esparrago.position.y = 78
+    esparrago.castShadow=esparrago.receiveShadow=true
+    brazo.castShadow=esparrago.receiveShadow=true
     brazo.add(esparrago)
 
 
     // Base rotula
-    rotula = new THREE.Mesh(new THREE.SphereGeometry(20), material)
+    rotula = new THREE.Mesh(new THREE.SphereGeometry(20), mateRotula)
     rotula.position.y = 140
+    rotula.castShadow=rotula.receiveShadow=true
+    brazo.castShadow=brazo.receiveShadow=true
+
     brazo.add(rotula)
 
     // Crea antebrazo
@@ -131,33 +174,37 @@ function loadScene() {
     antebrazo.position.y=140
     
     // Base antebrazo
-    const disco = new THREE.Mesh( new THREE.CylinderGeometry(22,22,6,24), material)
+    const disco = new THREE.Mesh( new THREE.CylinderGeometry(22,22,6,24), matAntebrazo)
     disco.castShadow=disco.receiveShadow=true
-
+    antebrazo.castShadow=antebrazo.receiveShadow=true
 
     antebrazo.add(disco)
 
     // Base columnas
 
-    const columna_1 = new THREE.Mesh( new THREE.BoxGeometry(4,80,4), material)
+    const columna_1 = new THREE.Mesh( new THREE.BoxGeometry(4,80,4), matAntebrazo)
     columna_1.position.y = 43
     columna_1.position.x = 11
+    columna_1.castShadow=columna_1.receiveShadow=true
 
-    const columna_2 = new THREE.Mesh( new THREE.BoxGeometry(4,80,4), material)
-    columna_2.castShadow=columna_2.receiveShadow=true
+
+    const columna_2 = new THREE.Mesh( new THREE.BoxGeometry(4,80,4), matAntebrazo)
     columna_2.position.y = 43
     columna_2.position.x = -11
+    columna_2.castShadow=columna_2.receiveShadow=true
 
-    const columna_3 = new THREE.Mesh( new THREE.BoxGeometry(4,80,4), material)
-    columna_3.castShadow=columna_3.receiveShadow=true
 
+    const columna_3 = new THREE.Mesh( new THREE.BoxGeometry(4,80,4), matAntebrazo)
     columna_3.position.y = 43
     columna_3.position.z = -11
+    columna_3.castShadow=columna_3.receiveShadow=true
 
-    const columna_4 = new THREE.Mesh( new THREE.BoxGeometry(4,80,4), material)
-    columna_4.castShadow=columna_4.receiveShadow=true
+
+    const columna_4 = new THREE.Mesh( new THREE.BoxGeometry(4,80,4), matAntebrazo)
     columna_4.position.y = 43
     columna_4.position.z = 11
+    columna_4.castShadow=columna_4.receiveShadow=true
+
 
     antebrazo.add(columna_1)
     antebrazo.add(columna_2)
@@ -171,22 +218,27 @@ function loadScene() {
     mano = new THREE.Group();
     mano.position.y=90
 
+    mano.castShadow=mano.receiveShadow=true
 
-    const palma = new THREE.Mesh(new THREE.CylinderGeometry(15,15,40,24), material)
+    const palma = new THREE.Mesh(new THREE.CylinderGeometry(15,15,40,24), matAntebrazo)
     mano.add(palma)
+    
+    palma.castShadow=palma.receiveShadow=true
 
     palma.rotation.x = Math.PI/2
 
     
     // Pinzas
-    mano_1 = new THREE.Mesh( new THREE.BoxGeometry(20,19,4), material)
+    mano_1 = new THREE.Mesh( new THREE.BoxGeometry(20,19,4), matPinza)
     // palma.add(mano_1)
     mano_1.position.y = 0
     mano_1.position.z = 15
     mano_1.position.x = 10
+    mano_1.castShadow=mano_1.receiveShadow=true
+    
     // mano_1.rotation.x=Math.PI/2
 
-    mano_2 = new THREE.Mesh( new THREE.BoxGeometry(20,19,4), material)
+    mano_2 = new THREE.Mesh( new THREE.BoxGeometry(20,19,4), matPinza)
     // palma.add(mano_2)
     // mano_2.position.y = -10
     // mano_2.position.z = 0
@@ -195,6 +247,8 @@ function loadScene() {
     mano_2.position.y = 0
     mano_2.position.z = -15
     mano_2.position.x = 10
+    mano_2.castShadow=mano_2.receiveShadow=true
+
     // mano_2.rotation.x=Math.PI/2
 
 
@@ -222,8 +276,11 @@ function loadScene() {
     dedo.setAttribute('position', new THREE.BufferAttribute(coordenadas,3))
     dedo.computeVertexNormals();
 
-    const dedo_1 = new THREE.Mesh(dedo, material)
-    const dedo_2 = new THREE.Mesh(dedo, material)
+    const dedo_1 = new THREE.Mesh(dedo, matPinza)
+    const dedo_2 = new THREE.Mesh(dedo, matPinza)
+    dedo_1.castShadow=dedo_1.receiveShadow=true
+    dedo_2.castShadow=dedo_2.receiveShadow=true
+
 
 
     mano_1.add(dedo_1)
@@ -239,18 +296,39 @@ function loadScene() {
 
 
     robot = new THREE.Object3D();
-    robot.receiveShadow=true
-    robot.castShadow=robot.receiveShadow=true
     robot.name  = 'robot'
 
     antebrazo.add(mano);
     brazo.add(antebrazo);
     base_cilindro.add(brazo);
     robot.add(base_cilindro);
+    robot.castShadow=robot.receiveShadow=true
+
 
     scene.add(robot);
 
+    const parades=[]
+    parades.push(new THREE.MeshBasicMaterial({side:THREE.BackSide,
+    map: new THREE.TextureLoader().load(path+"posx.jpg")}))
 
+    parades.push(new THREE.MeshBasicMaterial({side:THREE.BackSide,
+        map: new THREE.TextureLoader().load(path+"negx.jpg")}))
+    
+    parades.push(new THREE.MeshBasicMaterial({side:THREE.BackSide,
+            map: new THREE.TextureLoader().load(path+"posy.jpg")}))
+    
+    parades.push(new THREE.MeshBasicMaterial({side:THREE.BackSide,
+    map: new THREE.TextureLoader().load(path+"negy.jpg")}))
+    
+    parades.push(new THREE.MeshBasicMaterial({side:THREE.BackSide,
+        map: new THREE.TextureLoader().load(path+"posz.jpg")}))
+    
+    parades.push(new THREE.MeshBasicMaterial({side:THREE.BackSide,
+            map: new THREE.TextureLoader().load(path+"negz.jpg")}))
+
+    const habitacion = new THREE.Mesh(new THREE.BoxGeometry(1000,1000,1000),parades)
+
+    scene.add(habitacion)
     
 }
 
@@ -280,12 +358,30 @@ function render()
 
 function animate(){
     //capturar y normalizar
-    new TWEEN.Tween(robot.rotation).
-    to({x: [0,0],y:[Math.PI,-Math.PI/2],z:[0,0]},5000).
-    interpolation(TWEEN.Interpolation.Linear).
-    easing(TWEEN.Easing.Bounce.InOut).
-    start();
+   
+    new TWEEN.Tween(brazo.rotation).
+    to({x:[0,0], y:[0,0], z:[Math.PI*4]}, 9000).
+    interpolation(TWEEN.Interpolation.Linear).start()
 
+    new TWEEN.Tween(antebrazo.rotation).
+    to({x:[0,0], y:[0,0], z:[Math.PI/2]}, 9000).
+    interpolation(TWEEN.Interpolation.Bezier).start()
+
+    new TWEEN.Tween(antebrazo.rotation).
+    to({x:[0,0], y:[0,0], z:[Math.PI/2,0]}, 9000).
+    interpolation(TWEEN.Interpolation.Bezier).start()
+ 
+    new TWEEN.Tween(mano.rotation).
+    to({x:[0,0], y:[0,0], z:[-Math.PI*2]}, 9000).
+    interpolation(TWEEN.Interpolation.Bezier).start()
+
+    new TWEEN.Tween(mano_1.position).
+    to({x:[0,0], y:[0,0], z:[10,0,10]}, 9000).
+    interpolation(TWEEN.Interpolation.Linear).start()
+
+    new TWEEN.Tween(mano_2.position).
+    to({x:[0,0], y:[0,0], z:[-10,0,-10]}, 9000).
+    interpolation(TWEEN.Interpolation.Linear).start()
 }
 
 
